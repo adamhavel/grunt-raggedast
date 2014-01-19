@@ -127,3 +127,7 @@ grunt.initConfig({
 ## Release History
 
 MIT © Adam Havel
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/rizzenvrinn/grunt-raggedast/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
