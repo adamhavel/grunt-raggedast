@@ -35,14 +35,14 @@ module.exports = function(grunt) {
         options: {
         },
         files: {
-          'tmp/default_options': ['test/fixtures/index.html'],
+          'tmp/default_options.html': ['test/fixtures/index.html'],
         },
       },
       custom_options: {
         options: {
         },
         files: {
-          'tmp/custom_options': ['test/fixtures/index.html'],
+          'tmp/custom_options.html': ['test/fixtures/index.html'],
         },
       },
     },

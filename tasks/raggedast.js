@@ -16,18 +16,19 @@ module.exports = function(grunt) {
 
       var words = ['a', 'aboard', 'about', 'above', 'across', 'after', 'against', 'along', 'amid', 'among', 'an', 'and', 'anti', 'around', 'as', 'at', 'before', 'behind', 'below', 'beneath', 'beside', 'besides', 'between', 'beyond', 'but', 'by', 'concerning', 'considering', 'despite', 'down', 'during', 'except', 'excepting', 'excluding', 'following', 'for', 'from', 'if', 'in', 'inside', 'into', 'like', 'minus', 'near', 'nor', 'of', 'on', 'onto', 'opposite', 'or', 'outside', 'over', 'past', 'plus', 'regarding', 'round', 'save', 'since', 'than', 'that', 'the', 'this', 'through', 'to', 'toward', 'towards', 'under', 'underneath', 'unlike', 'until', 'upon', 'versus', 'with', 'within', 'without'];
 
-      //var units = [mm,cm,m,km,in,l,kg,g,s,A,F,V,J,W,N,T,H,Hz,px,°C,°F,%,Ω,dpi,dpp,px];
+      var units = ['mm', 'cm', 'm', 'km', 'in', 'ft', 'ml', 'l', 'kg', 'g', 's', 'A', 'F', 'V', 'J', 'W', 'N', 'T', 'H', 'Hz', '°C', '°F', '%', 'Ω', 'dpi', 'dpp', 'px'];
 
       var options = this.options({
          selector: 'p',
          space: '&#160;',
          words: true, 
          symbols: true,
+         units: true,
          numbers: true,
          emphasis: true,
-         shortWords: 0,
-         limit: 0,
-         dictionary: 'en'
+         quotes: true,
+         shortWords: 2,
+         limit: 0
       });
 
       /**
@@ -38,16 +39,16 @@ module.exports = function(grunt) {
        *    since we don't want the boundary to appear in the match, but JavaScript regex engine
        *    doesn't support it. Using '\b' (which has a length of zero) is a possibility, but it would
        *    make the pattern match words like 'right-on', which is not desirable.
-       * 2. Matches an opening quote mark.
+       * 2. Matches an opening quote mark, in case there's one.
        * 3. List of words to match.
        * 4. Deals with the case where the word is immediatelly followed by one or several HTML tags.
        * 5. Matches a string of whitespaces. Makes sure the word is not yet processed or at the end
        *    of a sentence.
-       * 6. Greedily repeats steps 3.–5. thus finding the longest streak of matching words possible.
+       * 6. Greedily repeats steps 3.–5. thus finding the longest continous string of words possible.
        */
       var regexWords = new RegExp(
          '(\\s|^|\\(|\\[|>|—|' + options.space + ')' /* 1. */
-         + '["\'´`„“‚‘‛‟‹]?' /* 2. */
+         + '["\'´`„“‚‘‛‟‹«]?' /* 2. */
          + '('
             + '(' + words.join('|') + ')' /* 3. */
             + '(<[^>]+>)*' /* 4. */
@@ -68,13 +69,23 @@ module.exports = function(grunt) {
       'gi');
 
       /**
+       * Regular expressions to find units preceded by a number.
+       * 1. Finds a number.
+       * 2. Fires a match if it's followed by whitespaces and one of the specified unit.
+       */
+      var regexUnits = new RegExp(
+         '[\\d]' /* 1. */
+         + '[\\s]+(' + units.join('|') + ')(?=\\W)', /* 2. */
+      'gi');
+
+      /**
        * Regular expressions to find numbers separated into groups of thousands.
        * 1. Finds the first group of numbers.
        * 2. Fires a match for whitespaces followed by a group of three numbers.
        *    Repeats greedily.
        */
       var regexNumbers = new RegExp(
-         '[\\d]+' /* 1. */
+         '[\\d]' /* 1. */
          + '([\\s]+[\\d]{3})+', /* 2. */
       'gi');
                                 
@@ -86,9 +97,23 @@ module.exports = function(grunt) {
        */
       var regexEmphasis = new RegExp(
          '<(strong|em|b|i)>' /* 1. */
-         + '(([^\\s<])+(\\s)+){1,2}' /* 2. */
-         + '([^\\s<]+(\\s)*)' /* 3. */
+         + '([^\\s<]+[\\s]+){1,2}' /* 2. */
+         + '([^\\s<]+[\\s]*)' /* 3. */
          + '<\\/(strong|em|b|i)>', /* 1. */
+      'gi');
+
+      /**
+       * Regular expression to find short quotations.
+       * 1. Finds the opening and closing quote marks.
+       * 2. Matches the first one or two words, depending on the quote length.
+       * 3. Matches the last quoted word.
+       */
+      var regexQuotes = new RegExp(
+         '(\\s|^|\\(|\\[|>|—|' + options.space + ')'
+         + '["\'´`„“‚‘‛‟‹«]' /* 1. */
+         + '([^\\s]+[\\s]+){1,2}' /* 2. */
+         + '([^\\s]+?[\\s]*)' /* 3. */
+         + '["\'´`”’‛‟›»]', /* 1. */
       'gi');
 
       var regexSpace = new RegExp(options.space, 'gi');
@@ -114,8 +139,8 @@ module.exports = function(grunt) {
             var contents = $(this).html();
 
             /**
-             * It is better to take care of emphasis first, so we don't have
-             * to deal with hard spaces inserted by other processing.
+             * It is better to take care of emphasis and quotes first, so we don't
+             * have to tackle with hard spaces possibly inserted by other processing.
              */
             if (options.emphasis) {
                contents = contents.replace(regexEmphasis, function(content) {
@@ -127,6 +152,12 @@ module.exports = function(grunt) {
              * We have to deal with the boundary character being part of the matched string,
              * in case it's a whitespace.
              */
+            if (options.quotes) {
+               contents = contents.replace(regexQuotes, function(content) {
+                  return content.substr(0, 1) + content.substr(1).replace(/\s+/gi, options.space);
+               });  
+            }
+
             if (options.words) {
                contents = contents.replace(regexWords, function(content) {
                   return content.substr(0, 1) + content.substr(1).replace(/\s+/gi, options.space);
@@ -135,6 +166,12 @@ module.exports = function(grunt) {
 
             if (options.symbols) {
                contents = contents.replace(regexSymbols, function(content) {
+                  return content.replace(/\s+/gi, options.space);
+               });  
+            }
+
+            if (options.units) {
+               contents = contents.replace(regexUnits, function(content) {
                   return content.replace(/\s+/gi, options.space);
                });  
             }
@@ -150,7 +187,7 @@ module.exports = function(grunt) {
                // Almost the same as the regex for predefined words.
                var regexShort = new RegExp(
                   '(\\s|^|\\(|\\[|>|' + options.space + ')'
-                  + '["\'´`„“‚‘‛‟‹]?'
+                  + '["\'´`„“‚‘‛‟‹«]?'
                   + '('
                      + '([\\w-–’\']{1,' + options.shortWords + '})'
                      + '(<[^>]+>)*'
@@ -178,15 +215,15 @@ module.exports = function(grunt) {
                    * 2. Sets the range for words count that should fire as match.
                    */
                   var regexLimit = new RegExp(
-                     '([\\S]+' + options.space + ')' /* 1. */
-                     + '{' + (options.limit) + ',' + maxCount + '}', /* 2. */
+                     '([\\w-–’\']+?' + options.space + ')' /* 1. */
+                     + '{' + (options.limit - 1) + ',' + maxCount + '}', /* 2. */
                   'gi');
 
                   // Recursive goodness.
                   var reduce = function(streak) {
                      var count;
                      // If there is no hard space to remove or the count is within limits, do nothing.
-                     if (!regexSpace.test(streak) || (count = streak.match(regexSpace).length) <= options.limit) {
+                     if (!regexSpace.test(streak) || (count = streak.match(regexSpace).length) < options.limit) {
                         return streak;
                      }
                      var spaceLength = options.space.length;
@@ -213,8 +250,13 @@ module.exports = function(grunt) {
          });
 
          var output = $.html();
+         var count = 0;
 
-         grunt.log.writeln(output.match(regexSpace).length + ' hard spaces added to file "' + f.dest + '".');
+         if (regexSpace.test(output)) {
+            count = output.match(regexSpace).length;
+         }
+
+         grunt.log.writeln(count + ' hard spaces added to file "' + f.dest + '".');
 
          // Write the destination file.
          grunt.file.write(f.dest, output);
