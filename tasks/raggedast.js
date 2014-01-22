@@ -30,7 +30,7 @@ module.exports = function(grunt) {
          selector: 'p',
          space: '&#160;',
          thinSpace: '&#8239;',
-         words: true, 
+         words: false, 
          symbols: true,
          units: true,
          numbers: true,
@@ -39,14 +39,22 @@ module.exports = function(grunt) {
          months: true,
          orphans: 2,
          shortWords: 2,
-         limit: 0
+         limit: 3
       });
 
       var regexSpace = new RegExp(options.space, 'gi');
 
-      var openingQuotes = '"\'´`„“‚‘‛‟‹«';
+      /**
+       * Regular expression that matches only whitespaces that are not inside a tag.
+       */
+      var regexWhitespace = new RegExp(
+         '\\s+(?![^<>]+>)',
+      'gi')
 
-      var closingQuotes = '"\'´`”’‛‟›»';
+      var openingQuotes = '["\'´`„“‚‘‛‟‹«]',
+          closingQuotes = '["\'´`”’‛‟›»]',
+          gap = '(<[^>]+>|\\s|' + options.space + ')',
+          boundary = '(\\s|^|\\(|\\[|>|' + options.space + ')';
 
       // Iterate over all specified file groups.
       this.files.forEach(function(f) {
@@ -68,27 +76,29 @@ module.exports = function(grunt) {
          $(options.selector).map(function() {
             var contents = $(this).html();
 
-            /**
-             * It is better to take care of emphasis and quotes first, so we don't
-             * have to tackle with hard spaces possibly inserted by other processing.
-             */
             if (options.emphasis) {
 
                /**
                 * Regular expression that searches for short emphasized phrases.
-                * 1. Finds the opening and closing tags.
-                * 2. Matches the first one or two words, depending on the phrase length.
-                * 3. Matches the last emphasized word.
+                * 1. Finds boundaries of words. Matches a whitespace, a beginning of line, an open parenthesis,
+                *    an end of HTML tag or the specified hard space. We'd prefer to employ lookbehind,
+                *    since we don't want the boundary to appear in the match, but JavaScript regex engine
+                *    doesn't support it. Using '\b' (which has a length of zero) is a possibility, but it would
+                *    make the pattern match words like 'right-on', which is not desirable.
+                * 2. Finds the opening and closing tags.
+                * 3. Matches the first one or two words, depending on the phrase length.
+                * 4. Matches the last emphasized word.
                 */
                var regexEmphasis = new RegExp(
-                  '<(strong|em|b|i)>' /* 1. */
-                  + '([^\\s<]+[\\s]+){1,2}' /* 2. */
-                  + '([^\\s<]+[\\s]*)' /* 3. */
-                  + '<\\/(strong|em|b|i)>', /* 1. */
+                  boundary /* 1. */
+                  + '<(strong|em|b|i)[^>]+>' /* 2. */
+                  + '([^\\s<]+' + gap + '+){1,2}' /* 3. */
+                  + '([^\\s<]+' + gap + '*)' /* 4. */
+                  + '<\\/(strong|em|b|i)>(?=\\W)', /* 2. */
                'gi');
 
                contents = contents.replace(regexEmphasis, function(content) {
-                  return content.replace(/\s+/gi, options.space);
+                  return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
                });  
             }
 
@@ -105,15 +115,15 @@ module.exports = function(grunt) {
                 * 3. Matches the last quoted word.
                 */
                var regexQuotes = new RegExp(
-                  '(\\s|^|\\(|\\[|>|—|' + options.space + ')'
-                  + '[' + openingQuotes + ']' /* 1. */
-                  + '([^\\s]+[\\s]+){1,2}' /* 2. */
-                  + '([^\\s]+?[\\s]*)' /* 3. */
-                  + '[' + closingQuotes + ']', /* 1. */
+                  boundary
+                  + openingQuotes /* 1. */
+                  + '([^\\s<]+' + gap + '+){1,2}' /* 2. */
+                  + '([^\\s<]+?' + gap + '*)' /* 3. */
+                  + closingQuotes, /* 1. */
                'gi');
 
                contents = contents.replace(regexQuotes, function(content) {
-                  return content.substr(0, 1) + content.substr(1).replace(/\s+/gi, options.space);
+                  return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
                });  
             }
 
@@ -122,30 +132,24 @@ module.exports = function(grunt) {
                /**
                 * Regular expression that looks for words that shouldn't end up last on the line, i.e. prepositions,
                 * articles and conjunctions.
-                * 1. Finds boundaries of words. Matches a whitespace, a beginning of line, an open parenthesis,
-                *    an end of HTML tag or the specified hard space. We'd prefer to employ lookbehind,
-                *    since we don't want the boundary to appear in the match, but JavaScript regex engine
-                *    doesn't support it. Using '\b' (which has a length of zero) is a possibility, but it would
-                *    make the pattern match words like 'right-on', which is not desirable.
-                * 2. Matches an opening quote mark, in case there's one.
-                * 3. List of words to match.
-                * 4. Deals with the case where the word is immediatelly followed by one or several HTML tags.
-                * 5. Matches a string of whitespaces. Makes sure the word is not yet processed or at the end
-                *    of a sentence.
-                * 6. Greedily repeats steps 3.–5. thus finding the longest continous string of words possible.
+                * 1. Matches an opening quote mark, in case there's one.
+                * 2. List of words to match. 
+                * 3. Matches a string of whitespaces. Makes sure the word is not yet processed or at the end
+                *    of a sentence. Also deals with the case where the word is immediatelly followed by one
+                *    or several tags.
+                * 4. Greedily repeats steps 3.–5. thus finding the longest continous string of words possible.
                 */
                var regexWords = new RegExp(
-                  '(\\s|^|\\(|\\[|>|—|' + options.space + ')' /* 1. */
-                  + '[' + openingQuotes + ']?' /* 2. */
+                  boundary
+                  + openingQuotes + '?' /* 1. */
                   + '('
-                     + '(' + words.join('|') + ')' /* 3. */
-                     + '(<[^>]+>)*' /* 4. */
-                     + '(\\s)+' /* 5. */
-                  + ')+', /* 6. */
+                     + '(' + words.join('|') + ')' /* 2. */
+                     + gap + '+' /* 3. */
+                  + ')+', /* 4. */
                'gi');
 
                contents = contents.replace(regexWords, function(content) {
-                  return content.substr(0, 1) + content.substr(1).replace(/\s+/gi, options.space);
+                  return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
                });   
             }
 
@@ -153,19 +157,17 @@ module.exports = function(grunt) {
 
                /**
                 * Regular expressions for mathematical expressions and spaced dashes.
-                * 1. Matches a string of whitespaces and hard spaces, in case the surroundings
-                *    have already been processed. 
-                * 2. Matches common mathematical symbols and en or em dashes, NOT hyphens.
+                * 1. Matches common mathematical symbols and en or em dashes, NOT hyphens.
                 *    Should support Unicode numerical references in the future.
                 */
                var regexSymbols = new RegExp(
-                  '(\\s|' + options.space + ')+' /* 1. */
-                  + '[×\\+\\/\\=−–—]' /* 2. */
-                  + '(\\s|' + options.space + ')+', /* 1. */
+                  gap + '*'
+                  + '([×\\+\\/\\=−–—])' /* 1. */
+                  + gap + '*',
                'gi');
 
                contents = contents.replace(regexSymbols, function(content) {
-                  return content.replace(/\s+/gi, options.space);
+                  return content.replace(regexWhitespace, options.space);
                });  
             }
 
@@ -178,11 +180,12 @@ module.exports = function(grunt) {
                 */
                var regexUnits = new RegExp(
                   '[\\d]' /* 1. */
-                  + '[\\s]+(' + units.join('|') + ')(?=\\W)', /* 2. */
+                  + gap + '+'
+                  + '(' + units.join('|') + ')(?=\\W)', /* 2. */
                'gi');
 
                contents = contents.replace(regexUnits, function(content) {
-                  return content.replace(/\s+/gi, options.space);
+                  return content.replace(regexWhitespace, options.space);
                });  
             }
 
@@ -196,11 +199,11 @@ module.exports = function(grunt) {
                 */
                var regexNumbers = new RegExp(
                   '[\\d]' /* 1. */
-                  + '([\\s]+[\\d]{3})+', /* 2. */
+                  + '(' + gap + '+[\\d]{3})+', /* 2. */
                'gi');
 
                contents = contents.replace(regexNumbers, function(content) {
-                  return content.replace(/\s+/gi, options.thinSpace);
+                  return content.replace(regexWhitespace, options.thinSpace);
                });  
             }
 
@@ -212,7 +215,7 @@ module.exports = function(grunt) {
                 * the year part being optional.
                 * 1. Finds a number corresponding to a day.
                 * 2. Matches a month name, either full, e.g. 'January', or a short one like 'Jan'.
-                *    It must be followed by a whitespace, since the next part is optional and we
+                *    It must not be followed by another letter, since the next part is optional and we
                 *    don't want to include words like 'Jane'.
                 * 3. The month can be followed by a number representing a year.
                 * 4. The pattern either matches 1.–3. or tries to find the other format, beginning
@@ -222,15 +225,15 @@ module.exports = function(grunt) {
                 */
                var regexMonths = new RegExp(
                   '([\\d]{1,2}' /* 1. */
-                  + '[\\s]+(' + months.join('|') + '|' + shortMonths(months).join('|') + ')(?=\\W)' /* 2. */
-                  + '([\\s]+[\\d]{1,4})?' /* 3. */
-                  + '|(' + months.join('|') + '|' + shortMonths(months).join('|') + ')[\\s]+' /* 4. */
-                  + '[\\d]{1,2}' /* 5. */
-                  + '(,[\\s]+[\\d]{1,4})?)', /* 6. */
+                  + gap + '+(' + months.join('|') + '|' + shortMonths(months).join('|') + ')(?=\\W)' /* 2. */
+                  + '(' + gap + '+[\\d]{1,4})?' /* 3. */
+                  + '|(' + months.join('|') + '|' + shortMonths(months).join('|') + ')' /* 4. */
+                  + gap + '+[\\d]{1,2}' /* 5. */
+                  + '(,' + gap + '+[\\d]{1,4})?)', /* 6. */
                'gi');
 
                contents = contents.replace(regexMonths, function(content) {
-                  return content.replace(/\s+/gi, options.space);
+                  return content.replace(regexWhitespace, options.space);
                });  
             }
 
@@ -245,16 +248,15 @@ module.exports = function(grunt) {
                 * 3. The whole sequence must be at the very end of the processed text.
                 */
                var regexOrphans = new RegExp(
-                  '([\\s]+'
+                  '(' + gap + '+'
                   + '[^\\s<]+'
-                  + '(<[^>]+>)*'
                   + '){1,' + (options.orphans - 1) + '}' /* 1. */
                   + '[^\\s]?' /* 2. */
                   + '$', /* 3. */
                'gi');
 
                contents = contents.replace(regexOrphans, function(content) {
-                  return content.replace(/\s+/gi, options.space);
+                  return content.replace(regexWhitespace, options.space);
                });  
             }
 
@@ -265,17 +267,16 @@ module.exports = function(grunt) {
                 * 1. Matches words that fall within the specified length.
                 */
                var regexShort = new RegExp(
-                  '(\\s|^|\\(|\\[|>|' + options.space + ')'
-                  + '[' + openingQuotes + ']?'
+                  boundary
+                  + openingQuotes + '?'
                   + '('
                      + '([\\w-–’\']{1,' + options.shortWords + '})' /* 1. */
-                     + '(<[^>]+>)*'
-                     + '(\\s)+'
+                     + gap
                   + ')+',
                'gi');
                
                contents = contents.replace(regexShort, function(content) {
-                  return content.substr(0, 1) + content.substr(1).replace(/\s+/gi, options.space);
+                  return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
                });   
             }
             
@@ -294,8 +295,8 @@ module.exports = function(grunt) {
                    * 2. Sets the range for words count that should fire as match.
                    */
                   var regexLimit = new RegExp(
-                     '([\\w-–’\']+?' + options.space + ')' /* 1. */
-                     + '{' + (options.limit - 1) + ',' + maxCount + '}', /* 2. */
+                     '(([^\\s]|<[^>]+>)+?' + options.space + ')' /* 1. */
+                     + '{' + (options.limit) + ',' + maxCount + '}', /* 2. */
                   'gi');
 
                   // Recursive goodness.
@@ -305,6 +306,7 @@ module.exports = function(grunt) {
                      if (!regexSpace.test(streak) || (count = streak.match(regexSpace).length) < options.limit) {
                         return streak;
                      }
+                     grunt.log.writeln(streak);
                      var spaceLength = options.space.length;
                      // Find the hard space (more or less) in middle.
                      for (var i = Math.round(count / 2), splitIndex = 0; i--;) {
