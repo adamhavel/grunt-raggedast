@@ -1,53 +1,53 @@
 {
-   "name": "grunt-raggedast",
-   "description": "Adjust the text rag of your documents for better readability.",
-   "version": "0.1.0",
-   "homepage": "https://github.com/rizzenvrinn/grunt-raggedast",
-   "author": {
-      "name": "Adam Havel",
-      "email": "havel.adam@gmail.com"
-   },
-   "repository": {
-      "type": "git",
-      "url": "git://github.com/rizzenvrinn/grunt-raggedast.git"
-   },
-   "bugs": {
-      "url": "https://github.com/rizzenvrinn/grunt-raggedast/issues"
-   },
-   "licenses": [
-   {
+  "name": "grunt-raggedast",
+  "description": "Adjust the text rag of your documents for better readability.",
+  "version": "0.2.0",
+  "homepage": "https://github.com/rizzenvrinn/grunt-raggedast",
+  "author": {
+    "name": "Adam Havel",
+    "email": "havel.adam@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/rizzenvrinn/grunt-raggedast.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rizzenvrinn/grunt-raggedast/issues"
+  },
+  "licenses": [
+    {
       "type": "MIT",
       "url": "https://github.com/rizzenvrinn/grunt-raggedast/blob/master/LICENSE-MIT"
-   }
-   ],
-   "engines": {
-      "node": ">= 0.8.0"
-   },
-   "scripts": {
-      "test": "grunt test"
-   },
-   "devDependencies": {
-      "grunt-contrib-jshint": "~0.6.0",
-      "grunt-contrib-clean": "~0.4.0",
-      "grunt-contrib-nodeunit": "~0.2.0",
-      "grunt": "~0.4.2"
-   },
-   "peerDependencies": {
-      "grunt": "~0.4.2"
-   },
-   "keywords": [
-   "gruntplugin",
-   "typography",
-   "text",
-   "html",
-   "xml",
-   "dom",
-   "postprocess"
-   ],
-   "dependencies": {
-      "cheerio": "~0.13.1"
-   },
-   "files": [
-      "tasks/raggedast.js"
-   ]
+    }
+  ],
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "devDependencies": {
+    "grunt-contrib-jshint": "~0.6.0",
+    "grunt-contrib-clean": "~0.4.0",
+    "grunt-contrib-nodeunit": "~0.2.0",
+    "grunt": "~0.4.2"
+  },
+  "peerDependencies": {
+    "grunt": "~0.4.2"
+  },
+  "keywords": [
+    "gruntplugin",
+    "typography",
+    "text",
+    "html",
+    "xml",
+    "dom",
+    "postprocess"
+  ],
+  "dependencies": {
+    "cheerio": "~0.13.1"
+  },
+  "files": [
+    "tasks/raggedast.js"
+  ]
 }
