@@ -147,7 +147,7 @@ grunt.initConfig({
 
 ## Release History
 
-* 2014-01-23   v0.2.1   Prevented whitespace processing inside tags.
+* 2014-01-23   v0.2.1   Prevented whitespace processing inside tags.
 * 2014-01-22   v0.2.0   Added support for processing dates and orphans.
 * 2014-01-19   v0.1.0   Raggedast released.
 
