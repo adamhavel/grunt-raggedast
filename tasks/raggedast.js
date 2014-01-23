@@ -83,8 +83,8 @@ module.exports = function(grunt) {
                 * 1. Finds boundaries of words. Matches a whitespace, a beginning of line, an open parenthesis,
                 *    an end of HTML tag or the specified hard space. We'd prefer to employ lookbehind,
                 *    since we don't want the boundary to appear in the match, but JavaScript regex engine
-                *    doesn't support it. Using '\b' (which has a length of zero) is a possibility, but it would
-                *    make the pattern match words like 'right-on', which is not desirable.
+                *    doesn't support it. Using '\b' (which has a length of zero) is possible, but it would
+                *    match words like 'on' in 'right-on', which is not desirable.
                 * 2. Finds the opening and closing tags.
                 * 3. Matches the first one or two words, depending on the phrase length.
                 * 4. Matches the last emphasized word.
@@ -97,15 +97,15 @@ module.exports = function(grunt) {
                   + '<\\/(strong|em|b|i)>(?=\\W)', /* 2. */
                'gi');
 
+               /**
+                * We have to deal with the boundary character being part of the matched string,
+                * in case it's a whitespace.
+                */
                contents = contents.replace(regexEmphasis, function(content) {
                   return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
                });  
             }
 
-            /**
-             * We have to deal with the boundary character being part of the matched string,
-             * in case it's a whitespace.
-             */
             if (options.quotes) {
 
                /**
@@ -134,10 +134,10 @@ module.exports = function(grunt) {
                 * articles and conjunctions.
                 * 1. Matches an opening quote mark, in case there's one.
                 * 2. List of words to match. 
-                * 3. Matches a string of whitespaces. Makes sure the word is not yet processed or at the end
-                *    of a sentence. Also deals with the case where the word is immediatelly followed by one
-                *    or several tags.
-                * 4. Greedily repeats steps 3.–5. thus finding the longest continous string of words possible.
+                * 3. Matches a gap between words. That could consist of any combination of whitespaces, tags
+                *    or hard spaces.
+                * 4. Greedily repeats steps 2. and 3., thus finding the longest continous string of matching
+                *    words possible.
                 */
                var regexWords = new RegExp(
                   boundary
