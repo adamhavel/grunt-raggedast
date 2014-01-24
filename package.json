@@ -1,7 +1,7 @@
 {
   "name": "grunt-raggedast",
   "description": "Adjust the text rag of your documents for better readability.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "homepage": "https://github.com/rizzenvrinn/grunt-raggedast",
   "author": {
     "name": "Adam Havel",

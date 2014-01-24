@@ -30,7 +30,7 @@ module.exports = function(grunt) {
          selector: 'p',
          space: '&#160;',
          thinSpace: '&#8239;',
-         words: false, 
+         words: true, 
          symbols: true,
          units: true,
          numbers: true,
@@ -39,8 +39,14 @@ module.exports = function(grunt) {
          months: true,
          orphans: 2,
          shortWords: 2,
-         limit: 3
+         limit: 0
       });
+
+      var openingQuotes = '["\'´`„“‚‘‛‟‹«]',
+          closingQuotes = '["\'´`”’‛‟›»]',
+          gap = '(<[^>]+>|\\s|' + options.space + ')',
+          boundary = '(\\s|^|\\(|\\[|>|' + options.space + ')',
+          outsideTag = '(?![^<>]+>)';
 
       var regexSpace = new RegExp(options.space, 'gi');
 
@@ -48,13 +54,8 @@ module.exports = function(grunt) {
        * Regular expression that matches only whitespaces that are not inside a tag.
        */
       var regexWhitespace = new RegExp(
-         '\\s+(?![^<>]+>)',
+         '\\s+' + outsideTag,
       'gi')
-
-      var openingQuotes = '["\'´`„“‚‘‛‟‹«]',
-          closingQuotes = '["\'´`”’‛‟›»]',
-          gap = '(<[^>]+>|\\s|' + options.space + ')',
-          boundary = '(\\s|^|\\(|\\[|>|' + options.space + ')';
 
       // Iterate over all specified file groups.
       this.files.forEach(function(f) {
@@ -145,6 +146,7 @@ module.exports = function(grunt) {
                   + '('
                      + '(' + words.join('|') + ')' /* 2. */
                      + gap + '+' /* 3. */
+                     + outsideTag
                   + ')+', /* 4. */
                'gi');
 
@@ -272,6 +274,7 @@ module.exports = function(grunt) {
                   + '('
                      + '([\\w-–’\']{1,' + options.shortWords + '})' /* 1. */
                      + gap
+                     + outsideTag
                   + ')+',
                'gi');
                
@@ -306,7 +309,6 @@ module.exports = function(grunt) {
                      if (!regexSpace.test(streak) || (count = streak.match(regexSpace).length) < options.limit) {
                         return streak;
                      }
-                     grunt.log.writeln(streak);
                      var spaceLength = options.space.length;
                      // Find the hard space (more or less) in middle.
                      for (var i = Math.round(count / 2), splitIndex = 0; i--;) {
