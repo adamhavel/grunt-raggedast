@@ -1,6 +1,6 @@
 /*
  * grunt-raggedast
- * https://github.com/rizzenvrinn/grunt-raggedast
+ * https://github.com/adamhavel/grunt-raggedast
  *
  * Copyright (c) 2014 Adam Havel
  * Licensed under the MIT license.
@@ -30,7 +30,7 @@ module.exports = function(grunt) {
          selector: 'p',
          space: '&#160;',
          thinSpace: '&#8239;',
-         words: true, 
+         words: true,
          symbols: true,
          units: true,
          numbers: true,
@@ -70,7 +70,7 @@ module.exports = function(grunt) {
          }).map(function(filepath) {
            // Read file source.
            return grunt.file.read(filepath);
-         });   
+         });
 
          var $ = cheerio.load(src);
 
@@ -104,7 +104,7 @@ module.exports = function(grunt) {
                 */
                contents = contents.replace(regexEmphasis, function(content) {
                   return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
-               });  
+               });
             }
 
             if (options.quotes) {
@@ -125,7 +125,7 @@ module.exports = function(grunt) {
 
                contents = contents.replace(regexQuotes, function(content) {
                   return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
-               });  
+               });
             }
 
             if (options.words) {
@@ -134,7 +134,7 @@ module.exports = function(grunt) {
                 * Regular expression that looks for words that shouldn't end up last on the line, i.e. prepositions,
                 * articles and conjunctions.
                 * 1. Matches an opening quote mark, in case there's one.
-                * 2. List of words to match. 
+                * 2. List of words to match.
                 * 3. Matches a gap between words. That could consist of any combination of whitespaces, tags
                 *    or hard spaces.
                 * 4. Greedily repeats steps 2. and 3., thus finding the longest continous string of matching
@@ -152,7 +152,7 @@ module.exports = function(grunt) {
 
                contents = contents.replace(regexWords, function(content) {
                   return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
-               });   
+               });
             }
 
             if (options.symbols) {
@@ -170,7 +170,7 @@ module.exports = function(grunt) {
 
                contents = contents.replace(regexSymbols, function(content) {
                   return content.replace(regexWhitespace, options.space);
-               });  
+               });
             }
 
             if (options.units) {
@@ -188,7 +188,7 @@ module.exports = function(grunt) {
 
                contents = contents.replace(regexUnits, function(content) {
                   return content.replace(regexWhitespace, options.space);
-               });  
+               });
             }
 
             if (options.numbers) {
@@ -206,7 +206,7 @@ module.exports = function(grunt) {
 
                contents = contents.replace(regexNumbers, function(content) {
                   return content.replace(regexWhitespace, options.thinSpace);
-               });  
+               });
             }
 
             if (options.months) {
@@ -236,7 +236,7 @@ module.exports = function(grunt) {
 
                contents = contents.replace(regexMonths, function(content) {
                   return content.replace(regexWhitespace, options.space);
-               });  
+               });
             }
 
             if (options.orphans > 1) {
@@ -259,7 +259,7 @@ module.exports = function(grunt) {
 
                contents = contents.replace(regexOrphans, function(content) {
                   return content.replace(regexWhitespace, options.space);
-               });  
+               });
             }
 
             if (options.shortWords > 0) {
@@ -277,12 +277,12 @@ module.exports = function(grunt) {
                      + outsideTag
                   + ')+',
                'gi');
-               
+
                contents = contents.replace(regexShort, function(content) {
                   return content.substr(0, 1) + content.substr(1).replace(regexWhitespace, options.space);
-               });   
+               });
             }
-            
+
             // We want to tame too many hard spaces in a row.
             if (options.limit > 0) {
 
@@ -291,7 +291,7 @@ module.exports = function(grunt) {
 
                // No reason to continue if the limit is way too high.
                if (options.limit < maxCount) {
-               
+
                   /**
                    * Regular expression for strings that have more hard spaces in a row than allowed.
                    * 1. Matches words separated by the specified hard space.
@@ -327,7 +327,7 @@ module.exports = function(grunt) {
                   });
 
                }
-                  
+
             }
             $(this).html(contents);
          });

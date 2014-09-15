@@ -1,6 +1,6 @@
 /*
  * grunt-raggedast
- * https://github.com/rizzenvrinn/grunt-raggedast
+ * https://github.com/adamhavel/grunt-raggedast
  *
  * Copyright (c) 2014 Adam Havel
  * Licensed under the MIT license.

@@ -125,7 +125,7 @@ grunt.initConfig({
          selector: 'p',
          space: '&#160;',
          thinSpace: '&#8239;',
-         words: true, 
+         words: true,
          symbols: true,
          units: true,
          numbers: true,
@@ -147,6 +147,7 @@ grunt.initConfig({
 
 ## Release History
 
+* 2014-09-15   v0.2.3   Minor fixes.
 * 2014-01-24   v0.2.2   Prevented whitespace processing inside attributes.
 * 2014-01-23   v0.2.1   Prevented whitespace processing inside tags.
 * 2014-01-22   v0.2.0   Added support for processing dates and orphans.
@@ -155,7 +156,3 @@ grunt.initConfig({
 ## Release History
 
 MIT © Adam Havel
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/rizzenvrinn/grunt-raggedast/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
