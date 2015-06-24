@@ -40,6 +40,7 @@ module.exports = function(grunt) {
       },
       custom_options: {
         options: {
+          ignore: '.ignore'
         },
         files: {
           'tmp/custom_options.html': ['test/fixtures/index.html'],
